@@ -3,13 +3,15 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Island Dream Browser API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: search
+    description: Web search operations
 paths:
   /healthz:
     get:
@@ -24,6 +26,64 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /search:
+    get:
+      operationId: search
+      tags: [search]
+      summary: Search the web
+      description: Scrapes search results from DuckDuckGo HTML (no API key needed)
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Search query
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Page number (default 1)
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResults"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /proxy/meta:
+    get:
+      operationId: getProxyMeta
+      tags: [search]
+      summary: Get page metadata for a URL
+      description: Fetches title and description of a URL without proxying the full page
+      parameters:
+        - name: url
+          in: query
+          required: true
+          schema:
+            type: string
+          description: URL to fetch metadata for
+      responses:
+        "200":
+          description: Page metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PageMeta"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +93,56 @@ components:
           type: string
       required:
         - status
-
+    SearchResult:
+      type: object
+      properties:
+        title:
+          type: string
+        url:
+          type: string
+        description:
+          type: string
+        favicon:
+          type: ["string", "null"]
+        domain:
+          type: string
+      required:
+        - title
+        - url
+        - description
+        - domain
+    SearchResults:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/SearchResult"
+        query:
+          type: string
+        hasMore:
+          type: boolean
+      required:
+        - results
+        - query
+        - hasMore
+    PageMeta:
+      type: object
+      properties:
+        title:
+          type: ["string", "null"]
+        description:
+          type: ["string", "null"]
+        favicon:
+          type: ["string", "null"]
+        url:
+          type: string
+      required:
+        - url
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error

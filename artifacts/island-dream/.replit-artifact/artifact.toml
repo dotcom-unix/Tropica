@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Island Dream Browser"
+description = "A tropical-themed web browser app with its own built-in search scraper (no external APIs) and an optional server-side proxy. Users can search the web, browse results, and choose to open any link 'Securely' (through the built-in proxy) or 'Normally' (direct link). The UI is lush, tropical, and immersive."
+version = "1.0.0"
+id = "artifacts/island-dream"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21456
+
+[services.development]
+run = "pnpm --filter @workspace/island-dream run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/island-dream", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/island-dream/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21456"
+BASE_PATH = "/"

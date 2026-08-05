@@ -6,6 +6,13 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface HealthStatus {
-  status: string;
-}
+export type SearchParams = {
+/**
+ * Search query
+ */
+q: string;
+/**
+ * Page number (default 1)
+ */
+page?: number;
+};

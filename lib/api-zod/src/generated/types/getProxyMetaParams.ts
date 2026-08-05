@@ -6,6 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface HealthStatus {
-  status: string;
-}
+export type GetProxyMetaParams = {
+/**
+ * URL to fetch metadata for
+ */
+url: string;
+};
