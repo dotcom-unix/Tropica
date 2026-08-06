@@ -7,6 +7,7 @@ import Search from '@/pages/Search';
 import Browse from '@/pages/Browse';
 import History from '@/pages/History';
 import Bookmarks from '@/pages/Bookmarks';
+import Settings from '@/pages/Settings';
 import { Route, Switch, Router as WouterRouter } from 'wouter';
 
 const queryClient = new QueryClient();
@@ -19,6 +20,7 @@ function Router() {
       <Route path="/browse" component={Browse} />
       <Route path="/history" component={History} />
       <Route path="/bookmarks" component={Bookmarks} />
+      <Route path="/settings" component={Settings} />
       <Route component={NotFound} />
     </Switch>
   );

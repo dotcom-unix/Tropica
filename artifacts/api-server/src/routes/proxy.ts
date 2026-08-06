@@ -184,6 +184,77 @@ const INTERCEPTOR_SCRIPT = `
     return origOpen2.apply(this, arguments);
   };
 
+  // --- Console capture: forward logs to parent Browse frame ---
+  var origConsole = {};
+  ['log', 'warn', 'error', 'info', 'debug'].forEach(function(level) {
+    origConsole[level] = console[level].bind(console);
+    console[level] = function() {
+      origConsole[level].apply(console, arguments);
+      try {
+        var args = Array.prototype.slice.call(arguments).map(function(a) {
+          if (a === null) return 'null';
+          if (a === undefined) return 'undefined';
+          if (a instanceof Error) return a.stack || a.message;
+          try { return typeof a === 'object' ? JSON.stringify(a, null, 2) : String(a); }
+          catch(e) { return String(a); }
+        });
+        window.parent.postMessage({
+          type: 'island-dream-console',
+          level: level,
+          args: args,
+          source: window.location.href,
+          ts: Date.now()
+        }, '*');
+      } catch(e) {}
+    };
+  });
+
+  // --- Uncaught JS errors ---
+  window.addEventListener('error', function(e) {
+    try {
+      var loc = e.filename ? ' (' + e.filename.replace(/.*\\/api\\/proxy\\?url=/, '') + ':' + e.lineno + ':' + e.colno + ')' : '';
+      window.parent.postMessage({
+        type: 'island-dream-console',
+        level: 'error',
+        args: ['Uncaught: ' + e.message + loc],
+        source: window.location.href,
+        ts: Date.now()
+      }, '*');
+    } catch(ex) {}
+  }, true);
+
+  // --- Unhandled promise rejections ---
+  window.addEventListener('unhandledrejection', function(e) {
+    try {
+      var msg = e.reason instanceof Error ? (e.reason.stack || e.reason.message) : String(e.reason);
+      window.parent.postMessage({
+        type: 'island-dream-console',
+        level: 'error',
+        args: ['Unhandled Promise: ' + msg],
+        source: window.location.href,
+        ts: Date.now()
+      }, '*');
+    } catch(ex) {}
+  });
+
+  // --- Resource load errors (img, script, link, iframe) ---
+  window.addEventListener('error', function(e) {
+    var t = e.target;
+    if (!t || t === window) return;
+    var tag = t.tagName && t.tagName.toUpperCase();
+    if (!tag) return;
+    var src = t.src || t.href || '';
+    if (src) {
+      window.parent.postMessage({
+        type: 'island-dream-console',
+        level: 'warn',
+        args: ['Failed to load <' + tag.toLowerCase() + '>: ' + src],
+        source: window.location.href,
+        ts: Date.now()
+      }, '*');
+    }
+  }, true);
+
   // --- MutationObserver: dynamic meta-refresh + dynamic scripts/iframes ---
   function stripMetaRefresh(node) {
     if (!node || node.nodeType !== 1) return;

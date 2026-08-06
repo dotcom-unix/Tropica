@@ -3,7 +3,7 @@ import { useHistory } from '@/hooks/use-history';
 import { useBookmarks } from '@/hooks/use-bookmarks';
 import { useBrowseHistory } from '@/hooks/use-browse-history';
 import { useLocation } from 'wouter';
-import { Clock, Bookmark, Globe, History } from 'lucide-react';
+import { Clock, Bookmark, Globe, History, Settings } from 'lucide-react';
 import { IslandBackground } from '@/components/island-background';
 
 export default function Home() {
