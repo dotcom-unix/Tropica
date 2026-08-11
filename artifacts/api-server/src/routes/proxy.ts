@@ -95,14 +95,12 @@ function rewriteCssUrls(css: string, baseUrl: string): string {
 }
 
 /**
- * JavaScript injected into every proxied page.
- * - Intercepts location.assign / location.replace / window.open
- * - Tries to intercept location.href setter
- * - Posts a postMessage to parent when a redirect is detected
- * - MutationObserver watches for dynamically added meta-refresh tags
- * - Overrides fetch + XMLHttpRequest to route through the proxy
+ * Build the interceptor script for a specific target URL.
+ * Injecting the original URL lets us correctly resolve ALL relative paths
+ * (fetch, XHR, dynamic elements) against the real origin instead of the proxy path.
  */
-const INTERCEPTOR_SCRIPT = `
+function makeInterceptorScript(targetUrl: string): string {
+  return `
 <script id="__island_dream_interceptor__">
 (function() {
   'use strict';
@@ -110,20 +108,41 @@ const INTERCEPTOR_SCRIPT = `
   window.__islandDreamActive = true;
 
   var PROXY = '/api/proxy';
+  // The original page URL — used to resolve relative paths correctly.
+  // window.location inside the iframe is the proxy URL, not the target URL.
+  var BASE = ${JSON.stringify(targetUrl)};
 
   function resolveUrl(url) {
-    try { return new URL(url, window.location.href).href; } catch(e) { return String(url); }
+    if (!url) return url;
+    var s = String(url);
+    if (s.startsWith('data:') || s.startsWith('blob:') || s === 'about:blank') return s;
+    try {
+      // Resolve against the ORIGINAL target URL so relative paths are correct
+      return new URL(s, BASE).href;
+    } catch(e) { return s; }
+  }
+
+  function isAlreadyProxied(url) {
+    return url.indexOf('/api/proxy?') !== -1 || url.indexOf('/api/proxy&') !== -1;
   }
 
   function toProxied(url) {
-    var abs = resolveUrl(url);
-    if (!abs || abs.indexOf('island_dream') !== -1 || abs.indexOf('/api/proxy') === 0) return abs;
-    return PROXY + '?url=' + encodeURIComponent(abs) + '&embed=1';
+    try {
+      if (!url) return url;
+      var s = String(url);
+      if (s.startsWith('data:') || s.startsWith('blob:') || s === 'about:blank') return s;
+      if (isAlreadyProxied(s)) return s;
+      var abs = resolveUrl(s);
+      if (!abs || isAlreadyProxied(abs)) return abs;
+      // Only proxy http/https
+      if (!/^https?:\\/\\//i.test(abs)) return s;
+      return PROXY + '?url=' + encodeURIComponent(abs) + '&embed=1';
+    } catch(e) { return url; }
   }
 
   function interceptRedirect(rawUrl) {
     var url = resolveUrl(rawUrl);
-    window.parent.postMessage({ type: 'island-dream-redirect', url: url, from: window.location.href }, '*');
+    window.parent.postMessage({ type: 'island-dream-redirect', url: url, from: BASE }, '*');
     throw new Error('Island Dream: redirect intercepted to ' + url);
   }
 
@@ -156,32 +175,42 @@ const INTERCEPTOR_SCRIPT = `
     return origOpen ? origOpen.apply(window, arguments) : null;
   };
 
-  // --- fetch proxy ---
+  // --- fetch: intercept ALL URLs (relative and absolute) and proxy them ---
   var origFetch = window.fetch;
   if (origFetch) {
     window.fetch = function(input, init) {
       try {
-        var url = typeof input === 'string' ? input : (input instanceof URL ? input.href : input.url);
-        if (url && typeof url === 'string' && /^https?:\\/\\//i.test(url)) {
+        var url = typeof input === 'string' ? input
+                : (input instanceof URL ? input.href
+                : (input && input.url ? input.url : null));
+        if (url && typeof url === 'string') {
           var proxied = toProxied(url);
-          if (typeof input === 'string') input = proxied;
-          else if (input instanceof URL) input = new URL(proxied, window.location.href);
-          else input = new Request(proxied, input);
+          if (proxied !== url) {
+            if (typeof input === 'string') {
+              input = proxied;
+            } else if (typeof URL !== 'undefined' && input instanceof URL) {
+              input = proxied;
+            } else if (input && typeof input === 'object' && 'url' in input) {
+              // Request object — rebuild with new URL
+              try { input = new Request(proxied, input); } catch(e2) { input = proxied; }
+            }
+          }
         }
       } catch(e) {}
       return origFetch.call(window, input, init);
     };
   }
 
-  // --- XMLHttpRequest proxy ---
-  var origOpen2 = XMLHttpRequest.prototype.open;
+  // --- XMLHttpRequest: intercept ALL URLs ---
+  var origXhrOpen = XMLHttpRequest.prototype.open;
   XMLHttpRequest.prototype.open = function(method, url) {
     try {
-      if (typeof url === 'string' && /^https?:\\/\\//i.test(url)) {
-        arguments[1] = toProxied(url);
+      if (typeof url === 'string') {
+        var proxied = toProxied(url);
+        if (proxied !== url) arguments[1] = proxied;
       }
     } catch(e) {}
-    return origOpen2.apply(this, arguments);
+    return origXhrOpen.apply(this, arguments);
   };
 
   // --- Console capture: forward logs to parent Browse frame ---
@@ -255,10 +284,14 @@ const INTERCEPTOR_SCRIPT = `
     }
   }, true);
 
-  // --- MutationObserver: dynamic meta-refresh + dynamic scripts/iframes ---
-  function stripMetaRefresh(node) {
+  // --- MutationObserver: dynamic meta-refresh + dynamic element src rewriting ---
+  var SRC_TAGS = { SCRIPT:1, IFRAME:1, IMG:1, VIDEO:1, AUDIO:1, SOURCE:1 };
+  function rewriteNode(node) {
     if (!node || node.nodeType !== 1) return;
     var tag = node.tagName && node.tagName.toUpperCase();
+    if (!tag) return;
+
+    // Strip meta-refresh
     if (tag === 'META') {
       var equiv = node.getAttribute('http-equiv') || '';
       if (equiv.toLowerCase() === 'refresh') {
@@ -266,13 +299,34 @@ const INTERCEPTOR_SCRIPT = `
         var m = content.match(/url=['"]?([^'"]+)['"]?/i);
         if (m) { try { interceptRedirect(m[1].trim()); } catch(e) {} }
         node.parentNode && node.parentNode.removeChild(node);
+        return;
       }
     }
-    // Rewrite src of dynamically injected scripts/iframes/images
-    if (tag === 'SCRIPT' || tag === 'IFRAME' || tag === 'IMG') {
+
+    // Rewrite src/href of any dynamically injected resource element
+    // (catches ALL relative paths by running through toProxied → resolveUrl → BASE)
+    if (SRC_TAGS[tag]) {
       var src = node.getAttribute('src');
-      if (src && /^https?:\\/\\//i.test(src) && src.indexOf('/api/proxy') !== 0) {
-        node.setAttribute('src', toProxied(src));
+      if (src && !isAlreadyProxied(src) && !src.startsWith('data:') && !src.startsWith('blob:')) {
+        var proxied = toProxied(src);
+        if (proxied !== src) node.setAttribute('src', proxied);
+      }
+      // srcset
+      var srcset = node.getAttribute('srcset');
+      if (srcset) {
+        var newSrcset = srcset.replace(/(\\S+)(\\s+[\\d.]+[wx])?/g, function(_, u, d) {
+          if (!u || isAlreadyProxied(u)) return _;
+          var p = toProxied(u);
+          return p !== u ? (p + (d || '')) : _;
+        });
+        if (newSrcset !== srcset) node.setAttribute('srcset', newSrcset);
+      }
+    }
+    if (tag === 'LINK') {
+      var href = node.getAttribute('href');
+      if (href && !isAlreadyProxied(href) && !href.startsWith('data:')) {
+        var proxiedHref = toProxied(href);
+        if (proxiedHref !== href) node.setAttribute('href', proxiedHref);
       }
     }
   }
@@ -280,14 +334,27 @@ const INTERCEPTOR_SCRIPT = `
   try {
     var obs = new MutationObserver(function(mutations) {
       mutations.forEach(function(mut) {
-        mut.addedNodes.forEach(function(n) { stripMetaRefresh(n); });
+        mut.addedNodes.forEach(function(n) { rewriteNode(n); });
+        // Also handle attribute changes (e.g. JS setting .src after insert)
+        if (mut.type === 'attributes' && (mut.attributeName === 'src' || mut.attributeName === 'href')) {
+          rewriteNode(mut.target);
+        }
       });
     });
-    obs.observe(document.documentElement || document, { childList: true, subtree: true });
+    obs.observe(document.documentElement || document, {
+      childList: true, subtree: true, attributes: true,
+      attributeFilter: ['src', 'href', 'srcset']
+    });
   } catch(e) {}
 })();
 </script>
 `;
+}
+
+// Convenience alias used in rewriteHtml
+function makeInterceptorTag(targetUrl: string): string {
+  return makeInterceptorScript(targetUrl);
+}
 
 interface RewriteStats {
   adsBlocked: number;
