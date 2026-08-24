@@ -20,7 +20,7 @@ function extractDomain(url: string): string {
 }
 
 function getFaviconUrl(domain: string): string {
-  return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+  return `/api/favicon?domain=${encodeURIComponent(domain)}`;
 }
 
 async function scrapeSearch(query: string, page: number = 1): Promise<SearchResult[]> {

@@ -733,7 +733,7 @@ router.get("/proxy/meta", async (req, res) => {
       $("meta[name='description']").attr("content") ||
       null;
 
-    const favicon = `https://www.google.com/s2/favicons?domain=${new URL(targetUrl).hostname}&sz=32`;
+    const favicon = `/api/favicon?domain=${encodeURIComponent(new URL(targetUrl).hostname)}`;
 
     res.json({ title, description, favicon, url: targetUrl });
   } catch (err) {
