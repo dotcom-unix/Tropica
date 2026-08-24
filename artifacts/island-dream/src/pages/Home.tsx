@@ -34,6 +34,14 @@ export default function Home() {
           <Bookmark className="w-4 h-4" />
           <span className="hidden sm:inline font-medium">Bookmarks</span>
         </button>
+        <button
+          onClick={() => setLocation('/settings')}
+          className="p-2 rounded-full bg-white/50 hover:bg-white/80 border border-primary/10 text-foreground/70 hover:text-primary backdrop-blur-md shadow-sm transition-all"
+          title="Settings"
+          aria-label="Settings"
+        >
+          <Settings className="w-4 h-4" />
+        </button>
       </div>
 
       <div className="relative z-10 w-full px-6 flex flex-col items-center max-w-4xl">

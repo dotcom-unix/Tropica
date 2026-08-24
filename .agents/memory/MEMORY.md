@@ -1,0 +1,1 @@
+- [Proxy resource resolution](proxy-resource-resolution.md) — resolve dynamic requests against the upstream page URL, not the proxy endpoint, and carry protection flags into nested resources.

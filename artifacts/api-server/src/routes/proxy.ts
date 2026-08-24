@@ -19,6 +19,26 @@ function isBlockedUrl(url: string): boolean {
 
 const PROXY_BASE = "/api/proxy";
 
+interface ProtectionOptions {
+  adBlock: boolean;
+  redirectBlock: boolean;
+  popupBlock: boolean;
+}
+
+const DEFAULT_PROTECTION: ProtectionOptions = {
+  adBlock: true,
+  redirectBlock: true,
+  popupBlock: true,
+};
+
+function readProtection(query: Record<string, unknown>): ProtectionOptions {
+  return {
+    adBlock: query["adblock"] !== "0",
+    redirectBlock: query["redirectblock"] !== "0",
+    popupBlock: query["popupblock"] !== "0",
+  };
+}
+
 function makeAbsolute(href: string, baseUrl: string): string | null {
   if (
     !href ||
@@ -31,41 +51,38 @@ function makeAbsolute(href: string, baseUrl: string): string | null {
     return null;
   }
   try {
-    if (href.startsWith("//")) {
-      const base = new URL(baseUrl);
-      return `${base.protocol}${href}`;
-    } else if (href.startsWith("/")) {
-      const base = new URL(baseUrl);
-      return `${base.protocol}//${base.host}${href}`;
-    } else if (/^https?:\/\//i.test(href)) {
-      return href;
-    } else {
-      const base = new URL(baseUrl);
-      const basePath = base.pathname.split("/").slice(0, -1).join("/") + "/";
-      return `${base.protocol}//${base.host}${basePath}${href}`;
-    }
+    // URL() correctly handles query strings, dot segments, protocol-relative
+    // URLs, and a document URL with or without a trailing slash.
+    return new URL(href, baseUrl).href;
   } catch {
     return null;
   }
 }
 
 /** Wrap an absolute URL in the proxy path. embed=true suppresses the toolbar for nested resources. */
-function proxyUrl(abs: string, embed = false): string {
-  return `${PROXY_BASE}?url=${encodeURIComponent(abs)}${embed ? "&embed=1" : ""}`;
+function proxyUrl(abs: string, embed = false, protection = DEFAULT_PROTECTION): string {
+  const params = new URLSearchParams({
+    url: abs,
+    adblock: protection.adBlock ? "1" : "0",
+    redirectblock: protection.redirectBlock ? "1" : "0",
+    popupblock: protection.popupBlock ? "1" : "0",
+  });
+  if (embed) params.set("embed", "1");
+  return `${PROXY_BASE}?${params.toString()}`;
 }
 
 /** Resolve href relative to baseUrl, then wrap in proxy. Returns original href if unresolvable. */
-function rewriteUrl(href: string, baseUrl: string, embed = false): string {
+function rewriteUrl(href: string, baseUrl: string, embed = false, protection = DEFAULT_PROTECTION): string {
   const abs = makeAbsolute(href, baseUrl);
   if (abs === null) return href;
-  return proxyUrl(abs, embed);
+  return proxyUrl(abs, embed, protection);
 }
 
 /**
  * Rewrite a srcset attribute — each entry is "url descriptor?" where descriptor
  * is optional e.g. "1x", "2x", "480w".
  */
-function rewriteSrcset(srcset: string, baseUrl: string): string {
+function rewriteSrcset(srcset: string, baseUrl: string, protection = DEFAULT_PROTECTION): string {
   return srcset
     .split(",")
     .map((part) => {
@@ -76,7 +93,7 @@ function rewriteSrcset(srcset: string, baseUrl: string): string {
       const url = match[1];
       const descriptor = match[2] || "";
       const abs = makeAbsolute(url, baseUrl);
-      return abs ? `${proxyUrl(abs)}${descriptor}` : trimmed;
+      return abs ? `${proxyUrl(abs, true, protection)}${descriptor}` : trimmed;
     })
     .join(", ");
 }
@@ -85,12 +102,12 @@ function rewriteSrcset(srcset: string, baseUrl: string): string {
  * Rewrite CSS url() references inside inline style attributes or <style> blocks.
  * Handles: url("…"), url('…'), url(…)
  */
-function rewriteCssUrls(css: string, baseUrl: string): string {
+function rewriteCssUrls(css: string, baseUrl: string, protection = DEFAULT_PROTECTION): string {
   return css.replace(/url\(\s*(['"]?)([^)'"]+)\1\s*\)/gi, (_match, quote, rawUrl) => {
     const trimmed = rawUrl.trim();
     const abs = makeAbsolute(trimmed, baseUrl);
     if (!abs) return _match;
-    return `url(${quote}${proxyUrl(abs)}${quote})`;
+    return `url(${quote}${proxyUrl(abs, true, protection)}${quote})`;
   });
 }
 
@@ -110,19 +127,35 @@ const INTERCEPTOR_SCRIPT = `
   window.__islandDreamActive = true;
 
   var PROXY = '/api/proxy';
+  var islandQuery = new URLSearchParams(window.location.search);
+  var TARGET_URL = islandQuery.get('url') || window.location.href;
+  var REDIRECT_BLOCK = islandQuery.get('redirectblock') !== '0';
+  var POPUP_BLOCK = islandQuery.get('popupblock') !== '0';
+  var AD_BLOCK = islandQuery.get('adblock') !== '0';
 
   function resolveUrl(url) {
     try { return new URL(url, window.location.href).href; } catch(e) { return String(url); }
   }
 
   function toProxied(url) {
-    var abs = resolveUrl(url);
-    if (!abs || abs.indexOf('island_dream') !== -1 || abs.indexOf('/api/proxy') === 0) return abs;
-    return PROXY + '?url=' + encodeURIComponent(abs) + '&embed=1';
+    var raw = String(url || '');
+    if (!raw || /^(data:|blob:|javascript:|about:)/i.test(raw) ||
+        raw.indexOf('/api/proxy') === 0) return url;
+    var abs;
+    try { abs = new URL(raw, TARGET_URL).href; } catch(e) { abs = resolveUrl(raw); }
+    if (!abs || abs.indexOf('/api/proxy') === 0) return url;
+    return PROXY + '?url=' + encodeURIComponent(abs) +
+      '&embed=1&adblock=' + (AD_BLOCK ? '1' : '0') +
+      '&redirectblock=' + (REDIRECT_BLOCK ? '1' : '0') +
+      '&popupblock=' + (POPUP_BLOCK ? '1' : '0');
   }
 
   function interceptRedirect(rawUrl) {
     var url = resolveUrl(rawUrl);
+    if (!REDIRECT_BLOCK) {
+      try { window.location.href = url; } catch(e) {}
+      return;
+    }
     window.parent.postMessage({ type: 'island-dream-redirect', url: url, from: window.location.href }, '*');
     throw new Error('Island Dream: redirect intercepted to ' + url);
   }
@@ -149,6 +182,9 @@ const INTERCEPTOR_SCRIPT = `
   // --- window.open ---
   var origOpen = window.open;
   window.open = function(url, target, features) {
+    if (!POPUP_BLOCK) {
+      return origOpen ? origOpen.apply(window, arguments) : null;
+    }
     if (url && String(url) !== 'about:blank' && String(url) !== '') {
       try { interceptRedirect(String(url)); } catch(e) {}
       return null;
@@ -162,7 +198,7 @@ const INTERCEPTOR_SCRIPT = `
     window.fetch = function(input, init) {
       try {
         var url = typeof input === 'string' ? input : (input instanceof URL ? input.href : input.url);
-        if (url && typeof url === 'string' && /^https?:\\/\\//i.test(url)) {
+        if (url && typeof url === 'string' && !/^(data:|blob:|javascript:|about:)/i.test(url)) {
           var proxied = toProxied(url);
           if (typeof input === 'string') input = proxied;
           else if (input instanceof URL) input = new URL(proxied, window.location.href);
@@ -177,7 +213,7 @@ const INTERCEPTOR_SCRIPT = `
   var origOpen2 = XMLHttpRequest.prototype.open;
   XMLHttpRequest.prototype.open = function(method, url) {
     try {
-      if (typeof url === 'string' && /^https?:\\/\\//i.test(url)) {
+      if (typeof url === 'string' && !/^(data:|blob:|javascript:|about:)/i.test(url)) {
         arguments[1] = toProxied(url);
       }
     } catch(e) {}
@@ -264,14 +300,15 @@ const INTERCEPTOR_SCRIPT = `
       if (equiv.toLowerCase() === 'refresh') {
         var content = node.getAttribute('content') || '';
         var m = content.match(/url=['"]?([^'"]+)['"]?/i);
-        if (m) { try { interceptRedirect(m[1].trim()); } catch(e) {} }
+        if (m && REDIRECT_BLOCK) { try { interceptRedirect(m[1].trim()); } catch(e) {} }
+        if (m && !REDIRECT_BLOCK) { try { window.location.href = resolveUrl(m[1].trim()); } catch(e) {} }
         node.parentNode && node.parentNode.removeChild(node);
       }
     }
     // Rewrite src of dynamically injected scripts/iframes/images
     if (tag === 'SCRIPT' || tag === 'IFRAME' || tag === 'IMG') {
       var src = node.getAttribute('src');
-      if (src && /^https?:\\/\\//i.test(src) && src.indexOf('/api/proxy') !== 0) {
+      if (src && !/^(data:|blob:|javascript:|about:)/i.test(src) && src.indexOf('/api/proxy') !== 0) {
         node.setAttribute('src', toProxied(src));
       }
     }
@@ -296,7 +333,8 @@ interface RewriteStats {
 function rewriteHtml(
   html: string,
   targetUrl: string,
-  embedMode = false
+  embedMode = false,
+  protection: ProtectionOptions = DEFAULT_PROTECTION
 ): { output: string; stats: RewriteStats } {
   const $ = cheerio.load(html);
   let adsBlocked = 0;
@@ -306,34 +344,36 @@ function rewriteHtml(
 
   // ── 1. Strip meta refresh tags ─────────────────────────────────────────────
   $("meta[http-equiv]").each((_i, el) => {
-    if (($(el).attr("http-equiv") || "").toLowerCase() === "refresh") {
+    if (protection.redirectBlock && ($(el).attr("http-equiv") || "").toLowerCase() === "refresh") {
       $(el).remove();
     }
   });
 
   // ── 2. Remove known ad container elements ─────────────────────────────────
-  try {
-    $(AD_SELECTORS).each((_i, el) => { $(el).remove(); adsBlocked++; });
-  } catch { /* ignore selector errors */ }
+  if (protection.adBlock) {
+    try {
+      $(AD_SELECTORS).each((_i, el) => { $(el).remove(); adsBlocked++; });
+    } catch { /* ignore selector errors */ }
+  }
 
   // ── 3. <script src> — remove ad domains, proxy everything else ────────────
   $("script[src]").each((_i, el) => {
     const src = $(el).attr("src") || "";
     const abs = makeAbsolute(src, targetUrl);
-    if (abs && isAdDomain(abs)) {
+    if (protection.adBlock && abs && isAdDomain(abs)) {
       $(el).remove(); adsBlocked++; return;
     }
-    if (abs) $(el).attr("src", proxyUrl(abs, true));
+    if (abs) $(el).attr("src", proxyUrl(abs, true, protection));
   });
 
   // ── 4. <link href> — remove ad domains, proxy everything else ────────────
   $("link[href]").each((_i, el) => {
     const href = $(el).attr("href") || "";
     const abs = makeAbsolute(href, targetUrl);
-    if (abs && isAdDomain(abs)) {
+    if (protection.adBlock && abs && isAdDomain(abs)) {
       $(el).remove(); adsBlocked++; return;
     }
-    if (abs) $(el).attr("href", proxyUrl(abs, true));
+    if (abs) $(el).attr("href", proxyUrl(abs, true, protection));
   });
 
   // ── 5. <img src + srcset> — remove ad domains, proxy everything else ──────
@@ -341,19 +381,19 @@ function rewriteHtml(
     const src = $(el).attr("src") || "";
     if (src && !src.startsWith("data:")) {
       const abs = makeAbsolute(src, targetUrl);
-      if (abs && isAdDomain(abs)) {
+      if (protection.adBlock && abs && isAdDomain(abs)) {
         $(el).remove(); adsBlocked++; return;
       }
-      if (abs) $(el).attr("src", proxyUrl(abs, true));
+      if (abs) $(el).attr("src", proxyUrl(abs, true, protection));
     }
     // srcset
     const srcset = $(el).attr("srcset");
-    if (srcset) $(el).attr("srcset", rewriteSrcset(srcset, targetUrl));
+    if (srcset) $(el).attr("srcset", rewriteSrcset(srcset, targetUrl, protection));
     // data-src (lazy loading)
     const dataSrc = $(el).attr("data-src");
     if (dataSrc) {
       const abs2 = makeAbsolute(dataSrc, targetUrl);
-      if (abs2) $(el).attr("data-src", proxyUrl(abs2, true));
+      if (abs2) $(el).attr("data-src", proxyUrl(abs2, true, protection));
     }
   });
 
@@ -362,11 +402,11 @@ function rewriteHtml(
     const src = $(el).attr("src") || "";
     if (!src || src.startsWith("data:") || src === "about:blank") return;
     const abs = makeAbsolute(src, targetUrl);
-    if (abs && isAdDomain(abs)) {
+    if (protection.adBlock && abs && isAdDomain(abs)) {
       $(el).remove(); adsBlocked++; return;
     }
     if (abs) {
-      $(el).attr("src", proxyUrl(abs, true));
+      $(el).attr("src", proxyUrl(abs, true, protection));
       // Ensure iframe can render proxied content
       const existing = $(el).attr("sandbox") || "";
       if (existing) {
@@ -383,31 +423,39 @@ function rewriteHtml(
     const src = $(el).attr("src");
     if (src) {
       const abs = makeAbsolute(src, targetUrl);
-      if (abs) $(el).attr("src", proxyUrl(abs, true));
+      if (abs) $(el).attr("src", proxyUrl(abs, true, protection));
     }
     const srcset = $(el).attr("srcset");
-    if (srcset) $(el).attr("srcset", rewriteSrcset(srcset, targetUrl));
+    if (srcset) $(el).attr("srcset", rewriteSrcset(srcset, targetUrl, protection));
   });
 
   // ── 8. <video src>, <audio src> ───────────────────────────────────────────
   $("video[src], audio[src]").each((_i, el) => {
     const src = $(el).attr("src") || "";
     const abs = makeAbsolute(src, targetUrl);
-    if (abs) $(el).attr("src", proxyUrl(abs, true));
+    if (abs) $(el).attr("src", proxyUrl(abs, true, protection));
   });
 
   // ── 9. <video poster> ─────────────────────────────────────────────────────
   $("video[poster]").each((_i, el) => {
     const poster = $(el).attr("poster") || "";
     const abs = makeAbsolute(poster, targetUrl);
-    if (abs) $(el).attr("poster", proxyUrl(abs, true));
+    if (abs) $(el).attr("poster", proxyUrl(abs, true, protection));
+  });
+
+  // Other URL-bearing elements that frequently appear in embeds.
+  $("object[data], embed[src], track[src], input[src]").each((_i, el) => {
+    const attribute = $(el).is("[data]") ? "data" : "src";
+    const raw = $(el).attr(attribute) || "";
+    const abs = makeAbsolute(raw, targetUrl);
+    if (abs) $(el).attr(attribute, proxyUrl(abs, true, protection));
   });
 
   // ── 10. Inline style attributes — rewrite url() ───────────────────────────
   $("[style]").each((_i, el) => {
     const style = $(el).attr("style") || "";
     if (style.includes("url(")) {
-      $(el).attr("style", rewriteCssUrls(style, targetUrl));
+      $(el).attr("style", rewriteCssUrls(style, targetUrl, protection));
     }
   });
 
@@ -415,25 +463,28 @@ function rewriteHtml(
   $("style").each((_i, el) => {
     const css = $(el).html() || "";
     if (css.includes("url(")) {
-      $(el).html(rewriteCssUrls(css, targetUrl));
+      $(el).html(rewriteCssUrls(css, targetUrl, protection));
     }
   });
 
   // ── 12. <a href> — route through proxy ────────────────────────────────────
   $("a[href]").each((_i, el) => {
     const href = $(el).attr("href") || "";
-    const rewritten = rewriteUrl(href, targetUrl);
+    const rewritten = rewriteUrl(href, targetUrl, false, protection);
     if (rewritten !== href) {
       $(el).attr("href", rewritten);
-      $(el).attr("target", "_self");
+      if (protection.popupBlock) $(el).attr("target", "_self");
     }
   });
+  if (protection.popupBlock) {
+    $("a[target='_blank'], a[target='_new'], a[target='_parent']").attr("target", "_self");
+  }
 
   // ── 13. <form action> — route through proxy ───────────────────────────────
   $("form[action]").each((_i, el) => {
     const action = $(el).attr("action") || "";
     if (action && !action.startsWith("javascript:")) {
-      $(el).attr("action", rewriteUrl(action, targetUrl));
+      $(el).attr("action", rewriteUrl(action, targetUrl, false, protection));
     }
   });
 
@@ -520,9 +571,10 @@ function makeRedirectInterceptPage(fromUrl: string, toUrl: string): string {
 }
 
 // ── Main proxy route ───────────────────────────────────────────────────────
-router.get("/proxy", async (req, res) => {
+router.all("/proxy", async (req, res) => {
   const urlParam = req.query["url"];
   const embedMode = req.query["embed"] === "1";
+  const protection = readProtection(req.query as Record<string, unknown>);
 
   if (!urlParam || typeof urlParam !== "string") {
     res.status(400).send("<h1>Island Dream Proxy: Missing URL</h1>");
@@ -544,14 +596,31 @@ router.get("/proxy", async (req, res) => {
   }
 
   try {
+    const upstreamRequestHeaders: Record<string, string> = {
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+      "Accept-Language": "en-US,en;q=0.9",
+      "Accept-Encoding": "identity",
+    };
+    const requestContentType = req.headers["content-type"];
+    if (typeof requestContentType === "string") {
+      upstreamRequestHeaders["Content-Type"] = requestContentType;
+    }
+
+    let requestBody: string | undefined;
+    if (req.method !== "GET" && req.method !== "HEAD") {
+      if (requestContentType?.includes("application/x-www-form-urlencoded")) {
+        requestBody = new URLSearchParams(req.body as Record<string, string>).toString();
+      } else if (requestContentType?.includes("application/json")) {
+        requestBody = JSON.stringify(req.body);
+      }
+    }
+
     const upstream = await fetch(targetUrl, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.9",
-        "Accept-Encoding": "identity",
-      },
+      method: req.method,
+      headers: upstreamRequestHeaders,
+      body: requestBody,
       redirect: "manual",
     });
 
@@ -565,9 +634,9 @@ router.get("/proxy", async (req, res) => {
         } catch {
           redirectTarget = location;
         }
-        if (embedMode) {
+        if (embedMode || !protection.redirectBlock) {
           // For embedded resources, just follow the redirect through the proxy
-          res.redirect(302, proxyUrl(redirectTarget, true));
+          res.redirect(302, proxyUrl(redirectTarget, true, protection));
         } else {
           res.setHeader("Content-Type", "text/html; charset=utf-8");
           res.send(makeRedirectInterceptPage(targetUrl, redirectTarget));
@@ -583,7 +652,7 @@ router.get("/proxy", async (req, res) => {
     res.removeHeader("X-Frame-Options");
     res.removeHeader("X-Content-Type-Options");
 
-    if (!contentType.includes("text/html")) {
+    if (!contentType.includes("text/html") && !contentType.includes("text/css")) {
       // Non-HTML: stream through with original content type
       res.setHeader("Content-Type", contentType);
       const buffer = await upstream.arrayBuffer();
@@ -591,10 +660,17 @@ router.get("/proxy", async (req, res) => {
       return;
     }
 
-    const html = await upstream.text();
-    const { output } = rewriteHtml(html, targetUrl, embedMode);
+    const sourceText = await upstream.text();
+    const output = contentType.includes("text/css")
+      ? rewriteCssUrls(sourceText, targetUrl, protection)
+      : rewriteHtml(sourceText, targetUrl, embedMode, protection).output;
 
-    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    res.setHeader(
+      "Content-Type",
+      contentType.includes("text/css")
+        ? "text/css; charset=utf-8"
+        : "text/html; charset=utf-8",
+    );
     res.setHeader("X-Island-Dream-Proxied", "1");
     res.send(output);
   } catch (err) {

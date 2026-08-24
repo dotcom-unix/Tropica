@@ -1,6 +1,6 @@
 import { useLocation } from 'wouter';
 import { useSettings } from '@/hooks/use-settings';
-import { ArrowLeft, Terminal, Shield, ShieldOff, RotateCw } from 'lucide-react';
+import { ArrowLeft, Terminal, Shield, ShieldOff, RotateCw, Ban } from 'lucide-react';
 
 interface ToggleRowProps {
   icon: React.ReactNode;
@@ -98,6 +98,13 @@ export default function Settings() {
               description="Intercept HTTP, meta-refresh, and JavaScript redirects and ask before following them."
               checked={settings.redirectBlockEnabled}
               onChange={v => set('redirectBlockEnabled', v)}
+            />
+            <ToggleRow
+              icon={<Ban className="w-5 h-5" />}
+              label="Popup Blocker"
+              description="Stop new windows, tabs, and popup frames opened by proxied pages unless you turn this off."
+              checked={settings.popupBlockEnabled}
+              onChange={v => set('popupBlockEnabled', v)}
             />
           </div>
         </section>

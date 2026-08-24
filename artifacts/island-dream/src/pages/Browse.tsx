@@ -87,7 +87,7 @@ export default function Browse() {
 
   useEffect(() => {
     if (!currentUrl) return;
-    addBrowseEntry({ url: currentUrl, title: meta?.title || currentUrl, favicon: meta?.favicon });
+    addBrowseEntry({ url: currentUrl, title: meta?.title || currentUrl, favicon: meta?.favicon || undefined });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUrl, meta?.title]);
 
@@ -200,7 +200,7 @@ export default function Browse() {
 
   const toggleBookmark = () => {
     if (isBookmarked(currentUrl)) removeBookmark(currentUrl);
-    else addBookmark({ url: currentUrl, title: meta?.title || currentUrl, favicon: meta?.favicon });
+    else addBookmark({ url: currentUrl, title: meta?.title || currentUrl, favicon: meta?.favicon || undefined });
   };
 
   const addressSuggestions = inputValue.trim()
@@ -213,6 +213,12 @@ export default function Browse() {
   const bookmarked = isBookmarked(currentUrl);
 
   const clearTerminal = () => { setConsoleLog([]); setErrorCount(0); };
+  const proxyParams = new URLSearchParams({
+    url: currentUrl,
+    adblock: settings.adBlockEnabled ? '1' : '0',
+    redirectblock: settings.redirectBlockEnabled ? '1' : '0',
+    popupblock: settings.popupBlockEnabled ? '1' : '0',
+  });
 
   return (
     <div className="h-[100dvh] w-full flex flex-col bg-card font-sans">
@@ -311,7 +317,7 @@ export default function Browse() {
         <iframe
           ref={iframeRef}
           key={iframeKey}
-          src={`/api/proxy?url=${encodeURIComponent(currentUrl)}`}
+          src={`/api/proxy?${proxyParams.toString()}`}
           className="w-full h-full border-none"
           title="Secure Proxy View"
           sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
