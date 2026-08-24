@@ -1,6 +1,6 @@
 import { useLocation } from 'wouter';
 import { useSettings } from '@/hooks/use-settings';
-import { ArrowLeft, Terminal, Shield, ShieldOff, RotateCw, Ban } from 'lucide-react';
+import { ArrowLeft, Shield, ShieldOff, RotateCw, Ban } from 'lucide-react';
 
 interface ToggleRowProps {
   icon: React.ReactNode;
@@ -62,22 +62,6 @@ export default function Settings() {
       </header>
 
       <main className="max-w-xl mx-auto px-4 py-8 space-y-6">
-
-        {/* Developer */}
-        <section>
-          <h2 className="text-xs font-bold uppercase tracking-widest text-primary/60 mb-3 px-1">
-            Developer
-          </h2>
-          <div className="space-y-2">
-            <ToggleRow
-              icon={<Terminal className="w-5 h-5" />}
-              label="Browser Terminal"
-              description="Show a console panel while browsing securely. Captures logs, errors, and network issues from proxied pages."
-              checked={settings.terminalEnabled}
-              onChange={v => set('terminalEnabled', v)}
-            />
-          </div>
-        </section>
 
         {/* Privacy */}
         <section>

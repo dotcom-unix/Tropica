@@ -1,14 +1,12 @@
 import { useState, useEffect } from 'react';
 
 export interface Settings {
-  terminalEnabled: boolean;
   adBlockEnabled: boolean;
   redirectBlockEnabled: boolean;
   popupBlockEnabled: boolean;
 }
 
 const DEFAULTS: Settings = {
-  terminalEnabled: false,
   adBlockEnabled: true,
   redirectBlockEnabled: true,
   popupBlockEnabled: true,
