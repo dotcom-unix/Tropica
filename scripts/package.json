@@ -1,11 +1,12 @@
 {
   "name": "@workspace/scripts",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
   "type": "module",
   "scripts": {
     "hello": "tsx ./src/hello.ts",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "repeat-command": "while true; do npm run my-task; sleep 0.01; done",
+    "my-task": "echo 'https://centergrove.instructure.com/courses/2311020/pages/semana-4?module_item_id=36924604 @linewize @Linewize'"
   },
   "devDependencies": {
     "@types/node": "catalog:",
