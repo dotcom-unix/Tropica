@@ -1,1 +1,1 @@
-console.log("Hello from @workspace/scripts");
+console.log("https://canvas.instructure.com @workspace/scripts");
