@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { SearchResult } from '@workspace/api-client-react';
-import { Shield, Globe, ExternalLink, ChevronRight } from 'lucide-react';
+import { Shield, Globe, ChevronRight } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 export function ResultCard({ result, index }: { result: SearchResult, index: number }) {
@@ -14,17 +14,11 @@ export function ResultCard({ result, index }: { result: SearchResult, index: num
     setLocation(`/browse?url=${encodeURIComponent(result.url)}`);
   };
 
-  const handleNormalOpen = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    setModalOpen(false);
-    window.open(result.url, '_blank', 'noopener,noreferrer');
-  };
-
   return (
     <>
       <div 
         data-testid={`card-result-${index}`}
-        onClick={() => setModalOpen(true)}
+        onClick={handleSecureOpen}
         className="group bg-card rounded-2xl p-6 border border-card-border shadow-sm hover:shadow-xl hover:border-primary/30 transition-all duration-300 cursor-pointer overflow-hidden relative"
       >
         {/* Subtle decorative coral accent on hover */}
@@ -57,13 +51,6 @@ export function ResultCard({ result, index }: { result: SearchResult, index: num
               >
                 <span>Open Securely 🛡️</span>
               </button>
-              <button 
-                data-testid={`button-normal-${index}`}
-                onClick={handleNormalOpen}
-                className="flex items-center gap-2 bg-transparent hover:bg-secondary/10 text-foreground/70 hover:text-secondary px-4 py-2 rounded-full text-sm font-medium border border-border hover:border-secondary/30 transition-colors"
-              >
-                <span>Open Normally 🌐</span>
-              </button>
             </div>
           </div>
         </div>
@@ -72,7 +59,7 @@ export function ResultCard({ result, index }: { result: SearchResult, index: num
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent className="sm:max-w-md bg-card border-primary/20 shadow-2xl" data-testid="dialog-open-choice">
           <DialogHeader>
-            <DialogTitle className="font-serif text-2xl text-center mb-4">How would you like to open this?</DialogTitle>
+            <DialogTitle className="font-serif text-2xl text-center mb-4">Open securely in Island Dream?</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-4 py-4">
             <button
@@ -92,22 +79,6 @@ export function ResultCard({ result, index }: { result: SearchResult, index: num
               <ChevronRight className="text-primary opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
             </button>
 
-            <button
-              data-testid="dialog-button-normal"
-              onClick={handleNormalOpen}
-              className="w-full flex items-center justify-between p-4 rounded-2xl bg-secondary/5 hover:bg-secondary/10 border-2 border-secondary/20 hover:border-secondary transition-all group text-left"
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-secondary/20 flex items-center justify-center text-secondary group-hover:scale-110 transition-transform">
-                  <ExternalLink className="w-6 h-6" />
-                </div>
-                <div>
-                  <div className="font-bold text-lg text-secondary">Open Normally 🌐</div>
-                  <div className="text-sm text-foreground/70">Leave paradise. Open in a new tab.</div>
-                </div>
-              </div>
-              <ChevronRight className="text-secondary opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
-            </button>
           </div>
         </DialogContent>
       </Dialog>

@@ -103,7 +103,11 @@ function rewriteSrcset(srcset: string, baseUrl: string, protection = DEFAULT_PRO
  * Handles: url("…"), url('…'), url(…)
  */
 function rewriteCssUrls(css: string, baseUrl: string, protection = DEFAULT_PROTECTION): string {
-  return css.replace(/url\(\s*(['"]?)([^)'"]+)\1\s*\)/gi, (_match, quote, rawUrl) => {
+  const withImports = css.replace(
+    /(@import\s+)(['"])([^'"]+)\2/gi,
+    (_match, prefix, quote, rawUrl) => `${prefix}${quote}${rewriteUrl(rawUrl, baseUrl, true, protection)}${quote}`,
+  );
+  return withImports.replace(/url\(\s*(['"]?)([^)'"]+)\1\s*\)/gi, (_match, quote, rawUrl) => {
     const trimmed = rawUrl.trim();
     const abs = makeAbsolute(trimmed, baseUrl);
     if (!abs) return _match;
@@ -152,8 +156,9 @@ const INTERCEPTOR_SCRIPT = `
 
   function interceptRedirect(rawUrl) {
     var url = resolveUrl(rawUrl);
+    var proxiedUrl = toProxied(rawUrl);
     if (!REDIRECT_BLOCK) {
-      try { window.location.href = url; } catch(e) {}
+      try { window.location.href = proxiedUrl; } catch(e) {}
       return;
     }
     window.parent.postMessage({ type: 'island-dream-redirect', url: url, from: window.location.href }, '*');
@@ -183,7 +188,9 @@ const INTERCEPTOR_SCRIPT = `
   var origOpen = window.open;
   window.open = function(url, target, features) {
     if (!POPUP_BLOCK) {
-      return origOpen ? origOpen.apply(window, arguments) : null;
+      var proxiedUrl = url && String(url) !== 'about:blank' ? toProxied(url) : url;
+      var popupArgs = [proxiedUrl, target, features];
+      return origOpen ? origOpen.apply(window, popupArgs) : null;
     }
     if (url && String(url) !== 'about:blank' && String(url) !== '') {
       try { interceptRedirect(String(url)); } catch(e) {}
@@ -220,78 +227,33 @@ const INTERCEPTOR_SCRIPT = `
     return origOpen2.apply(this, arguments);
   };
 
-  // --- Console capture: forward logs to parent Browse frame ---
-  var origConsole = {};
-  ['log', 'warn', 'error', 'info', 'debug'].forEach(function(level) {
-    origConsole[level] = console[level].bind(console);
-    console[level] = function() {
-      origConsole[level].apply(console, arguments);
-      try {
-        var args = Array.prototype.slice.call(arguments).map(function(a) {
-          if (a === null) return 'null';
-          if (a === undefined) return 'undefined';
-          if (a instanceof Error) return a.stack || a.message;
-          try { return typeof a === 'object' ? JSON.stringify(a, null, 2) : String(a); }
-          catch(e) { return String(a); }
-        });
-        window.parent.postMessage({
-          type: 'island-dream-console',
-          level: level,
-          args: args,
-          source: window.location.href,
-          ts: Date.now()
-        }, '*');
-      } catch(e) {}
-    };
-  });
+  // --- MutationObserver: dynamic redirects, navigation, and resources ---
+  function rewriteAttribute(node, attribute) {
+    if (!node || !node.getAttribute) return;
+    var raw = node.getAttribute(attribute);
+    if (!raw || /^(data:|blob:|javascript:|mailto:|tel:|about:|#)/i.test(raw) ||
+        raw.indexOf('/api/proxy') === 0) return;
+    var proxied = toProxied(raw);
+    if (proxied && proxied !== raw) node.setAttribute(attribute, proxied);
+  }
 
-  // --- Uncaught JS errors ---
-  window.addEventListener('error', function(e) {
-    try {
-      var loc = e.filename ? ' (' + e.filename.replace(/.*\\/api\\/proxy\\?url=/, '') + ':' + e.lineno + ':' + e.colno + ')' : '';
-      window.parent.postMessage({
-        type: 'island-dream-console',
-        level: 'error',
-        args: ['Uncaught: ' + e.message + loc],
-        source: window.location.href,
-        ts: Date.now()
-      }, '*');
-    } catch(ex) {}
-  }, true);
-
-  // --- Unhandled promise rejections ---
-  window.addEventListener('unhandledrejection', function(e) {
-    try {
-      var msg = e.reason instanceof Error ? (e.reason.stack || e.reason.message) : String(e.reason);
-      window.parent.postMessage({
-        type: 'island-dream-console',
-        level: 'error',
-        args: ['Unhandled Promise: ' + msg],
-        source: window.location.href,
-        ts: Date.now()
-      }, '*');
-    } catch(ex) {}
-  });
-
-  // --- Resource load errors (img, script, link, iframe) ---
-  window.addEventListener('error', function(e) {
-    var t = e.target;
-    if (!t || t === window) return;
-    var tag = t.tagName && t.tagName.toUpperCase();
-    if (!tag) return;
-    var src = t.src || t.href || '';
-    if (src) {
-      window.parent.postMessage({
-        type: 'island-dream-console',
-        level: 'warn',
-        args: ['Failed to load <' + tag.toLowerCase() + '>: ' + src],
-        source: window.location.href,
-        ts: Date.now()
-      }, '*');
+  function rewriteDynamicElement(node) {
+    if (!node || node.nodeType !== 1) return;
+    var tag = node.tagName && node.tagName.toUpperCase();
+    if (tag === 'A') rewriteAttribute(node, 'href');
+    if (tag === 'FORM') rewriteAttribute(node, 'action');
+    if (tag === 'SCRIPT' || tag === 'IFRAME' || tag === 'IMG' ||
+        tag === 'VIDEO' || tag === 'AUDIO' || tag === 'SOURCE' ||
+        tag === 'TRACK' || tag === 'EMBED' || tag === 'INPUT') rewriteAttribute(node, 'src');
+    if (tag === 'LINK') rewriteAttribute(node, 'href');
+    if (tag === 'OBJECT') rewriteAttribute(node, 'data');
+    if (tag === 'VIDEO') rewriteAttribute(node, 'poster');
+    if (node.querySelectorAll) {
+      node.querySelectorAll('a,form,script,iframe,img,video,audio,source,track,embed,input,link,object')
+        .forEach(rewriteDynamicElement);
     }
-  }, true);
+  }
 
-  // --- MutationObserver: dynamic meta-refresh + dynamic scripts/iframes ---
   function stripMetaRefresh(node) {
     if (!node || node.nodeType !== 1) return;
     var tag = node.tagName && node.tagName.toUpperCase();
@@ -301,17 +263,11 @@ const INTERCEPTOR_SCRIPT = `
         var content = node.getAttribute('content') || '';
         var m = content.match(/url=['"]?([^'"]+)['"]?/i);
         if (m && REDIRECT_BLOCK) { try { interceptRedirect(m[1].trim()); } catch(e) {} }
-        if (m && !REDIRECT_BLOCK) { try { window.location.href = resolveUrl(m[1].trim()); } catch(e) {} }
+        if (m && !REDIRECT_BLOCK) { try { window.location.href = toProxied(m[1].trim()); } catch(e) {} }
         node.parentNode && node.parentNode.removeChild(node);
       }
     }
-    // Rewrite src of dynamically injected scripts/iframes/images
-    if (tag === 'SCRIPT' || tag === 'IFRAME' || tag === 'IMG') {
-      var src = node.getAttribute('src');
-      if (src && !/^(data:|blob:|javascript:|about:)/i.test(src) && src.indexOf('/api/proxy') !== 0) {
-        node.setAttribute('src', toProxied(src));
-      }
-    }
+    rewriteDynamicElement(node);
   }
 
   try {
@@ -320,7 +276,12 @@ const INTERCEPTOR_SCRIPT = `
         mut.addedNodes.forEach(function(n) { stripMetaRefresh(n); });
       });
     });
-    obs.observe(document.documentElement || document, { childList: true, subtree: true });
+    obs.observe(document.documentElement || document, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['href', 'src', 'action', 'data', 'poster'],
+    });
   } catch(e) {}
 })();
 </script>
@@ -449,6 +410,18 @@ function rewriteHtml(
     const raw = $(el).attr(attribute) || "";
     const abs = makeAbsolute(raw, targetUrl);
     if (abs) $(el).attr(attribute, proxyUrl(abs, true, protection));
+  });
+
+  // SVG and legacy media elements can carry URLs outside the standard HTML
+  // selectors above. Rewrite these as well so inline SVG icons cannot make a
+  // direct browser request to the upstream host.
+  $("image[src], image[href], image[xlink\\:href], use[href], use[xlink\\:href], [formaction], [cite], [background]").each((_i, el) => {
+    ["src", "href", "xlink:href", "formaction", "cite", "background"].forEach((attribute) => {
+      const value = $(el).attr(attribute);
+      if (!value || /^(javascript:|mailto:|tel:|data:|blob:|#)/i.test(value)) return;
+      const abs = makeAbsolute(value, targetUrl);
+      if (abs) $(el).attr(attribute, proxyUrl(abs, true, protection));
+    });
   });
 
   // ── 10. Inline style attributes — rewrite url() ───────────────────────────
