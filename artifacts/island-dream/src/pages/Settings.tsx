@@ -1,6 +1,8 @@
 import { useLocation } from 'wouter';
 import { useSettings } from '@/hooks/use-settings';
-import { ArrowLeft, Shield, ShieldOff, RotateCw, Ban } from 'lucide-react';
+import { ArrowLeft, Shield, ShieldOff, RotateCw, Ban, Lock } from 'lucide-react';
+import { useEffect, useRef } from 'react';
+import SecureView from '@/lib/SecureView';
 
 interface ToggleRowProps {
   icon: React.ReactNode;
@@ -39,6 +41,64 @@ function ToggleRow({ icon, label, description, checked, onChange }: ToggleRowPro
 export default function Settings() {
   const [, setLocation] = useLocation();
   const { settings, set, reset } = useSettings();
+  const secureViewRef = useRef<SecureView | null>(null);
+
+  useEffect(() => {
+    // Initialize SecureView for sensitive settings data
+    const secureView = new SecureView({
+      encryptionKey: 'island-browser-secure',
+      showIndicator: true
+    });
+
+    secureView.init('secure-settings-container');
+    secureViewRef.current = secureView;
+
+    // Store sensitive settings data in secure worker
+    const sensitiveData = {
+      privacySettings: {
+        adBlockEnabled: settings.adBlockEnabled,
+        redirectBlockEnabled: settings.redirectBlockEnabled,
+        popupBlockEnabled: settings.popupBlockEnabled,
+      },
+      lastModified: new Date().toISOString(),
+      sessionToken: `session-${Date.now()}`
+    };
+
+    secureView.storeSecurely('browser-settings', sensitiveData);
+
+    // Render secure settings summary
+    secureView.render(
+      `
+      <div style="padding: 10px; font-family: inherit;">
+        <div style="margin-bottom: 12px;">
+          <p style="margin: 0; color: #666; font-size: 12px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Privacy Configuration</p>
+        </div>
+        <div style="space-y: 8px;">
+          <div style="padding: 8px; background: #f5f5f5; border-radius: 6px; margin-bottom: 8px;">
+            <p style="margin: 4px 0; font-size: 13px;"><strong>Ad & Tracker Blocker:</strong></p>
+            <p style="margin: 4px 0; font-size: 12px; color: #666;">${settings.adBlockEnabled ? '✓ Enabled' : '✗ Disabled'}</p>
+          </div>
+          <div style="padding: 8px; background: #f5f5f5; border-radius: 6px; margin-bottom: 8px;">
+            <p style="margin: 4px 0; font-size: 13px;"><strong>Redirect Blocker:</strong></p>
+            <p style="margin: 4px 0; font-size: 12px; color: #666;">${settings.redirectBlockEnabled ? '✓ Enabled' : '✗ Disabled'}</p>
+          </div>
+          <div style="padding: 8px; background: #f5f5f5; border-radius: 6px; margin-bottom: 8px;">
+            <p style="margin: 4px 0; font-size: 13px;"><strong>Popup Blocker:</strong></p>
+            <p style="margin: 4px 0; font-size: 12px; color: #666;">${settings.popupBlockEnabled ? '✓ Enabled' : '✗ Disabled'}</p>
+          </div>
+          <div style="padding: 8px; background: #f0f0f0; border-radius: 6px; border-left: 3px solid #667eea;">
+            <p style="margin: 4px 0; font-size: 11px; color: #999;">Last Updated: ${new Date().toLocaleTimeString()}</p>
+          </div>
+        </div>
+      </div>
+      `,
+      'Secure Privacy Settings'
+    );
+
+    return () => {
+      secureView.clear();
+    };
+  }, [settings]);
 
   return (
     <div className="min-h-screen bg-background font-sans">
@@ -62,6 +122,20 @@ export default function Settings() {
       </header>
 
       <main className="max-w-xl mx-auto px-4 py-8 space-y-6">
+
+        {/* Secure Settings Container - Hidden from Extensions */}
+        <section>
+          <div className="flex items-center gap-2 mb-3">
+            <Lock className="w-4 h-4 text-primary" />
+            <h2 className="text-xs font-bold uppercase tracking-widest text-primary/60">
+              Extension-Isolated Settings
+            </h2>
+          </div>
+          <div 
+            id="secure-settings-container" 
+            className="mb-6"
+          ></div>
+        </section>
 
         {/* Privacy */}
         <section>
@@ -95,6 +169,8 @@ export default function Settings() {
 
         <p className="text-center text-xs text-muted-foreground pt-4">
           All settings are stored locally on this device only.
+          <br />
+          <span className="text-primary/60 text-xs">🔒 Secure settings isolated from browser extensions</span>
         </p>
       </main>
     </div>
