@@ -44,8 +44,8 @@ export function IslandBackground() {
             <feDropShadow dx="5" dy="10" stdDeviation="8" floodColor="#073c4e" floodOpacity=".3" />
           </filter>
           <pattern id="wave-lines" width="260" height="72" patternUnits="userSpaceOnUse">
-            <path d="M-40 35 C 10 14, 55 14, 105 34 S 200 56, 300 28" fill="none" stroke="#baf5e8" strokeOpacity=".28" strokeWidth="5" />
-            <path d="M-80 58 C 0 42, 45 43, 110 58 S 215 73, 340 48" fill="none" stroke="#e2fff3" strokeOpacity=".14" strokeWidth="3" />
+            <path d="M-40 35 C 10 14, 55 14, 105 34 S 200 56, 300 28" fill="none" stroke="#baf5e8" strokeOpacity=".18" strokeWidth="4" />
+            <path d="M-80 58 C 0 42, 45 43, 110 58 S 215 73, 340 48" fill="none" stroke="#e2fff3" strokeOpacity=".09" strokeWidth="2" />
           </pattern>
         </defs>
 
@@ -69,38 +69,51 @@ export function IslandBackground() {
 
         {/* Ocean body */}
         <path d="M0 572 C190 545 290 565 420 585 C575 610 694 566 830 577 C1000 591 1115 548 1250 567 C1390 586 1500 552 1600 570 L1600 1000 L0 1000 Z" fill="url(#sea-depth)" />
-        <path d="M0 608 C180 582 305 602 450 625 C620 652 735 604 880 616 C1040 629 1160 588 1300 608 C1430 627 1515 596 1600 612 L1600 720 L0 720 Z" fill="#54c8bd" opacity=".35" />
+        <path d="M0 608 C180 582 305 602 450 625 C620 652 735 604 880 616 C1040 629 1160 588 1300 608 C1430 627 1515 596 1600 612 L1600 720 L0 720 Z" fill="#54c8bd" opacity=".28" />
         <path d="M0 656 C160 631 300 655 464 675 C610 693 760 654 902 666 C1075 681 1184 640 1340 659 C1450 673 1528 654 1600 662 L1600 1000 L0 1000 Z" fill="#0a6f87" opacity=".58" />
 
+        {/* Shallow aqua shelf and distant foam at the shoreline */}
+        <path d="M0 626 C190 599 312 624 452 646 C610 671 742 624 883 637 C1038 651 1168 612 1303 630 C1432 647 1528 619 1600 630 L1600 690 C1450 679 1320 701 1170 678 C1000 653 895 699 735 673 C580 649 445 692 280 661 C168 640 84 654 0 668 Z" fill="#72d6c0" opacity=".24" />
+        <path d="M0 641 C130 623 260 636 392 657 S 650 664 786 648 S 1030 630 1160 645 S 1410 664 1600 641" fill="none" stroke="#d8f5d1" strokeOpacity=".48" strokeWidth="5" />
+        <path d="M20 649 C115 635 192 644 275 655 M486 663 C575 672 638 669 715 659 M1018 648 C1102 640 1180 647 1262 658 M1430 659 C1490 665 1542 659 1590 651" fill="none" stroke="#fff5ce" strokeOpacity=".58" strokeWidth="2.5" strokeLinecap="round" />
+
         {/* Sun path across the water */}
-        <path d="M940 617 C1080 600 1260 604 1420 626 L1420 704 C1280 692 1110 690 965 705 Z" fill="url(#shore-glow)" opacity=".56" filter="url(#soft-blur)" />
-        <path d="M1000 628 C1130 620 1260 622 1380 636" fill="none" stroke="#fff6c7" strokeOpacity=".75" strokeWidth="8" strokeLinecap="round" />
+        <path d="M940 617 C1080 600 1260 604 1420 626 L1420 704 C1280 692 1110 690 965 705 Z" fill="url(#shore-glow)" opacity=".4" filter="url(#soft-blur)" />
+        <path d="M1010 629 C1080 624 1140 625 1210 629 M1260 631 C1312 632 1352 636 1390 642 M1080 652 C1152 647 1195 649 1248 654 M1290 665 C1334 663 1366 666 1402 671 M1130 683 C1168 680 1200 682 1230 686" fill="none" stroke="#fff6c7" strokeOpacity=".62" strokeWidth="5" strokeLinecap="round" />
 
         {/* Animated ocean texture */}
-        <rect y="618" width="1600" height="382" fill="url(#wave-lines)" opacity=".95" className="island-wave-texture" />
+        <rect y="618" width="1600" height="382" fill="url(#wave-lines)" opacity=".66" className="island-wave-texture" />
         <g fill="none" strokeLinecap="round">
-          <path d="M-20 705 C160 665 280 718 455 697 S 760 679 930 710 S 1260 736 1620 687" stroke="#a6efe0" strokeOpacity=".42" strokeWidth="8" className="island-wave island-wave-one" />
-          <path d="M-40 790 C155 744 312 800 500 774 S 825 755 1010 793 S 1330 816 1640 770" stroke="#83dfd5" strokeOpacity=".28" strokeWidth="10" className="island-wave island-wave-two" />
-          <path d="M-30 890 C180 849 330 901 548 875 S 860 854 1070 895 S 1400 918 1630 870" stroke="#b9f1df" strokeOpacity=".18" strokeWidth="7" className="island-wave island-wave-three" />
+          <path d="M-20 716 C120 683 260 725 405 710 S 690 686 842 718 S 1132 741 1288 712 S 1480 696 1620 713" stroke="#a6efe0" strokeOpacity=".34" strokeWidth="7" className="island-wave island-wave-one" />
+          <path d="M-40 786 C110 756 248 790 368 782 M470 779 C610 750 720 767 842 788 M1000 796 C1120 768 1210 776 1335 792 M1450 786 C1510 775 1572 778 1640 789" stroke="#c3f5e7" strokeOpacity=".25" strokeWidth="4" className="island-wave island-wave-two" />
+          <path d="M-30 868 C145 836 316 890 510 858 S 840 842 1008 873 S 1310 902 1630 854" stroke="#b9f1df" strokeOpacity=".2" strokeWidth="6" className="island-wave island-wave-three" />
+          <path d="M-25 944 C130 916 280 958 430 939 M610 934 C760 908 870 930 1008 947 M1190 950 C1325 923 1450 952 1625 925" stroke="#d3f6e7" strokeOpacity=".14" strokeWidth="4" className="island-wave island-wave-two" />
         </g>
 
         {/* Foreground palm tree */}
-        <g filter="url(#palm-shadow)">
+        <g transform="translate(80 225) scale(.62)" filter="url(#palm-shadow)" opacity=".86">
           <path d="M190 1030 C210 890 224 740 267 595 C286 531 322 462 357 407" fill="none" stroke="url(#palm-trunk)" strokeWidth="39" strokeLinecap="round" />
-          <path d="M206 1030 C236 860 260 710 286 600 C305 520 339 451 365 405" fill="none" stroke="#a56b3a" strokeOpacity=".35" strokeWidth="7" strokeLinecap="round" />
-          <g fill="none" stroke="#2b3c26" strokeWidth="18" strokeLinecap="round">
+          <path d="M206 1030 C236 860 260 710 286 600 C305 520 339 451 365 405" fill="none" stroke="#b77742" strokeOpacity=".35" strokeWidth="7" strokeLinecap="round" />
+          <g fill="none" stroke="#263b2b" strokeWidth="14" strokeLinecap="round">
             <path d="M360 405 C280 370 192 365 85 393" />
             <path d="M362 405 C260 326 188 273 93 254" />
             <path d="M365 403 C340 299 344 212 385 115" />
             <path d="M370 405 C425 303 505 242 606 205" />
             <path d="M371 408 C475 371 579 374 680 425" />
           </g>
-          <g fill="none" stroke="#526b35" strokeWidth="9" strokeLinecap="round" opacity=".85">
+          <g fill="none" stroke="#4c713e" strokeWidth="6" strokeLinecap="round" opacity=".92">
             <path d="M355 404 C260 388 177 390 75 430" />
             <path d="M358 399 C262 300 182 235 112 214" />
             <path d="M365 400 C350 287 363 190 426 85" />
             <path d="M372 402 C451 292 540 238 638 231" />
             <path d="M378 410 C494 386 585 408 690 474" />
+          </g>
+          <g fill="none" stroke="#6e9149" strokeWidth="4" strokeLinecap="round" opacity=".82">
+            <path d="M302 389 l-42 -31 M275 385 l-49 -12 M245 383 l-48 7 M215 386 l-44 24 M185 394 l-38 35" />
+            <path d="M315 367 l-30 -52 M295 349 l-39 -46 M274 331 l-42 -37 M252 315 l-42 -28 M228 300 l-40 -18" />
+            <path d="M357 352 l-25 -54 M351 320 l-20 -55 M348 287 l-11 -56 M350 251 l4 -58 M358 216 l18 -55" />
+            <path d="M400 361 l31 -52 M426 337 l42 -46 M453 314 l49 -36 M482 292 l57 -28 M515 274 l60 -16" />
+            <path d="M418 416 l57 -19 M452 422 l61 -5 M490 431 l64 11 M530 442 l62 26 M567 454 l59 39" />
           </g>
           <ellipse cx="365" cy="405" rx="48" ry="33" fill="#513528" />
           <path d="M325 410 C345 440 382 441 407 413" fill="none" stroke="#8a5833" strokeWidth="9" />
