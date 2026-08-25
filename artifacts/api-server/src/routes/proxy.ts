@@ -17,7 +17,7 @@ function isBlockedUrl(url: string): boolean {
   }
 }
 
-const PROXY_BASE = "/api/proxy";
+const PROXY_BASE = "/api/proxy"; //edit out later
 
 interface ProtectionOptions {
   adBlock: boolean;
@@ -144,7 +144,7 @@ const INTERCEPTOR_SCRIPT = `
   function toProxied(url) {
     var raw = String(url || '');
     if (!raw || /^(data:|blob:|javascript:|about:)/i.test(raw) ||
-        raw.indexOf('/api/proxy') === 0) return url;
+        raw.indexOf('/api/proxy') === 0) return url; 
     var abs;
     try { abs = new URL(raw, TARGET_URL).href; } catch(e) { abs = resolveUrl(raw); }
     if (!abs || abs.indexOf('/api/proxy') === 0) return url;
@@ -324,7 +324,7 @@ function rewriteHtml(
     if (protection.adBlock && abs && isAdDomain(abs)) {
       $(el).remove(); adsBlocked++; return;
     }
-    if (abs) $(el).attr("src", proxyUrl(abs, true, protection));
+    if (abs) $(el).attr("src", proxyUrl(abs, true, protection)); // problem
   });
 
   // ── 4. <link href> — remove ad domains, proxy everything else ────────────
@@ -345,7 +345,7 @@ function rewriteHtml(
       if (protection.adBlock && abs && isAdDomain(abs)) {
         $(el).remove(); adsBlocked++; return;
       }
-      if (abs) $(el).attr("src", proxyUrl(abs, true, protection));
+      if (abs) $(el).attr("src", proxyUrl(abs, true, protection)); // problem
     }
     // srcset
     const srcset = $(el).attr("srcset");
@@ -489,7 +489,7 @@ function rewriteHtml(
   min-height: 44px; box-sizing: border-box;
 ">
   <a href="/" style="color:white;text-decoration:none;font-weight:700;white-space:nowrap;font-size:14px;">Tropic</a>
-  <span style="background:rgba(255,255,255,0.15);border-radius:4px;padding:3px 8px;white-space:nowrap;font-size:11px;">🛡 Secure</span>
+  <span style="background:rgba(255,255,255,0.15);border-radius:4px;padding:3px 8px;white-space:nowrap;font-size:11px;">ScView</span>
   ${adBadge}
   <div style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:rgba(0,0,0,0.2);border-radius:6px;padding:4px 10px;font-size:12px;color:rgba(255,255,255,0.85);">
     ${targetUrl}
@@ -544,7 +544,7 @@ function makeRedirectInterceptPage(fromUrl: string, toUrl: string): string {
 }
 
 // ── Main proxy route ───────────────────────────────────────────────────────
-router.all("/proxy", async (req, res) => {
+router.all("/proxy", async (req, res) => { //fah
   const urlParam = req.query["url"];
   const embedMode = req.query["embed"] === "1";
   const protection = readProtection(req.query as Record<string, unknown>);
@@ -687,7 +687,7 @@ router.get("/proxy/meta", async (req, res) => {
   try {
     const upstream = await fetch(targetUrl, {
       headers: {
-        "User-Agent": "Mozilla/5.0 Tropic Browser/1.0",
+        "User-Agent": "Mozilla/5.0 Tropica Browser/1.0",
         Accept: "text/html",
       },
       redirect: "follow",
