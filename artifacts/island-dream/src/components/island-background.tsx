@@ -33,7 +33,7 @@ export function IslandBackground() {
             <feGaussianBlur stdDeviation="22" />
           </filter>
           <filter id="cloud-blur">
-            <feGaussianBlur stdDeviation="7" />
+            <feGaussianBlur stdDeviation="5" />
           </filter>
           <filter id="water-softness">
             <feTurbulence type="fractalNoise" baseFrequency=".008 .06" numOctaves="2" seed="8" result="noise" />
@@ -56,11 +56,17 @@ export function IslandBackground() {
         <circle cx="1240" cy="178" r="75" fill="#fff9d7" opacity=".95" />
         <circle cx="1240" cy="178" r="110" fill="none" stroke="#fff4bd" strokeOpacity=".32" strokeWidth="18" />
 
-        {/* Soft trade-wind clouds */}
-        <g fill="#fffdf5" opacity=".52" filter="url(#cloud-blur)">
-          <path d="M130 220 C190 165 265 185 290 228 C335 188 425 204 440 258 C355 280 245 275 125 270 Z" />
-          <path d="M730 155 C785 115 850 135 872 174 C922 138 1000 155 1017 207 C927 222 820 214 710 207 Z" />
-          <path d="M1360 310 C1420 262 1500 285 1525 330 C1570 300 1630 318 1660 360 C1555 380 1465 370 1345 360 Z" />
+        {/* Uneven trade-wind clouds: varied scale, density, and silhouette */}
+        <g filter="url(#cloud-blur)">
+          <path d="M72 245 C88 214 124 207 152 218 C171 178 230 169 264 205 C296 187 346 201 357 238 C390 236 416 251 426 279 C318 297 192 294 78 280 C67 270 66 258 72 245 Z" fill="#fffefa" opacity=".42" />
+          <path d="M572 157 C594 128 635 124 665 143 C690 100 754 103 778 145 C816 129 861 148 870 181 C916 177 954 199 962 227 C846 236 723 223 604 216 C578 204 564 183 572 157 Z" fill="#f8ffff" opacity=".34" />
+          <path d="M1168 328 C1181 298 1212 288 1240 299 C1255 261 1308 252 1340 285 C1375 263 1426 278 1438 315 C1476 306 1512 324 1526 355 C1420 373 1287 367 1183 358 C1170 350 1164 340 1168 328 Z" fill="#fffdf4" opacity=".32" />
+          <path d="M330 365 C342 343 369 337 391 347 C411 319 454 320 471 349 C500 337 536 348 544 375 C567 374 590 386 598 404 C520 417 416 411 348 399 C332 390 326 378 330 365 Z" fill="#effbfa" opacity=".18" />
+        </g>
+        <g fill="none" stroke="#ffffff" strokeLinecap="round" filter="url(#cloud-blur)" opacity=".2">
+          <path d="M135 276 C211 263 301 267 366 278" strokeWidth="12" />
+          <path d="M621 211 C709 197 816 204 890 219" strokeWidth="10" />
+          <path d="M1226 354 C1326 342 1429 349 1490 360" strokeWidth="9" />
         </g>
 
         {/* Distant island silhouettes */}

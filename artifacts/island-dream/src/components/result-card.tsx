@@ -59,7 +59,7 @@ export function ResultCard({ result, index }: { result: SearchResult, index: num
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent className="sm:max-w-md bg-card border-primary/20 shadow-2xl" data-testid="dialog-open-choice">
           <DialogHeader>
-            <DialogTitle className="font-serif text-2xl text-center mb-4">Open securely in Island Dream?</DialogTitle>
+            <DialogTitle className="font-serif text-2xl text-center mb-4">Open securely in Tropic?</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-4 py-4">
             <button

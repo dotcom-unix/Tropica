@@ -15,9 +15,8 @@ export default function Home() {
   const recentSites = browseHistory.slice(0, 6);
 
   return (
-    <div className="min-h-[100dvh] w-full relative overflow-hidden flex flex-col items-center justify-center bg-background text-foreground">
+    <div className="min-h-[100dvh] w-full relative overflow-hidden flex flex-col items-center justify-center bg-background text-foreground opacity-[0.6]">
       <IslandBackground />
-
       {/* Top-right nav links */}
       <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
         <button
@@ -43,13 +42,12 @@ export default function Home() {
           <Settings className="w-4 h-4" />
         </button>
       </div>
-
       <div className="relative z-10 w-full px-6 flex flex-col items-center max-w-4xl">
-         <h1 className="cloud-title font-serif text-6xl md:text-8xl font-bold mb-4 text-center tracking-tight">
-          Island Dream
+         <h1 className="cloud-title font-serif text-6xl md:text-8xl font-bold mb-4 text-center tracking-tight opacity-[0.6]">
+           Tropic
         </h1>
          <p className="scene-subtitle text-xl md:text-2xl mb-12 text-center font-sans max-w-lg">
-          Your slice of paradise on the web.
+           Your slice of the web.
         </p>
 
         <div className="w-full mb-10 flex justify-center">

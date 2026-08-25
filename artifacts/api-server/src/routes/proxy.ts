@@ -162,7 +162,7 @@ const INTERCEPTOR_SCRIPT = `
       return;
     }
     window.parent.postMessage({ type: 'island-dream-redirect', url: url, from: window.location.href }, '*');
-    throw new Error('Island Dream: redirect intercepted to ' + url);
+    throw new Error('Tropic: redirect intercepted to ' + url);
   }
 
   // --- location.assign ---
@@ -469,7 +469,7 @@ function rewriteHtml(
     $("body").prepend(INTERCEPTOR_SCRIPT);
   }
 
-  // ── 15. Inject Island Dream toolbar (skip in embed mode) ──────────────────
+  // ── 15. Inject Tropic toolbar (skip in embed mode) ────────────────────────
   if (!embedMode) {
     const adBadge =
       adsBlocked > 0
@@ -488,7 +488,7 @@ function rewriteHtml(
   box-shadow: 0 2px 12px rgba(0,0,0,0.3);
   min-height: 44px; box-sizing: border-box;
 ">
-  <a href="/" style="color:white;text-decoration:none;font-weight:700;white-space:nowrap;font-size:14px;">🌴 Island Dream</a>
+  <a href="/" style="color:white;text-decoration:none;font-weight:700;white-space:nowrap;font-size:14px;">Tropic</a>
   <span style="background:rgba(255,255,255,0.15);border-radius:4px;padding:3px 8px;white-space:nowrap;font-size:11px;">🛡 Secure</span>
   ${adBadge}
   <div style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:rgba(0,0,0,0.2);border-radius:6px;padding:4px 10px;font-size:12px;color:rgba(255,255,255,0.85);">
@@ -511,7 +511,7 @@ function makeRedirectInterceptPage(fromUrl: string, toUrl: string): string {
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Island Dream — Redirect Detected</title>
+  <title>Tropic — Redirect Detected</title>
   <style>
     body { margin:0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
            background: #0d7377; color: white; display:flex; align-items:center; justify-content:center;
@@ -530,7 +530,7 @@ function makeRedirectInterceptPage(fromUrl: string, toUrl: string): string {
     <h2>🔀 Redirect Detected</h2>
     <p>This page wants to redirect you to:</p>
     <div class="url">${toUrl}</div>
-    <p style="margin-top:12px;font-size:12px;opacity:0.6;">Asking Island Dream for permission…</p>
+    <p style="margin-top:12px;font-size:12px;opacity:0.6;">Asking Tropic for permission…</p>
   </div>
   <script>
     window.parent.postMessage({
@@ -550,7 +550,7 @@ router.all("/proxy", async (req, res) => {
   const protection = readProtection(req.query as Record<string, unknown>);
 
   if (!urlParam || typeof urlParam !== "string") {
-    res.status(400).send("<h1>Island Dream Proxy: Missing URL</h1>");
+    res.status(400).send("<h1>Tropic Proxy: Missing URL</h1>");
     return;
   }
 
@@ -559,12 +559,12 @@ router.all("/proxy", async (req, res) => {
     targetUrl = decodeURIComponent(urlParam);
     new URL(targetUrl);
   } catch {
-    res.status(400).send("<h1>Island Dream Proxy: Invalid URL</h1>");
+    res.status(400).send("<h1>Tropic Proxy: Invalid URL</h1>");
     return;
   }
 
   if (isBlockedUrl(targetUrl)) {
-    res.status(403).send("<h1>Island Dream Proxy: This URL is not allowed.</h1>");
+    res.status(403).send("<h1>Tropic Proxy: This URL is not allowed.</h1>");
     return;
   }
 
@@ -650,9 +650,9 @@ router.all("/proxy", async (req, res) => {
     req.log.error({ err }, "Proxy fetch failed");
     res.status(502).send(`<!DOCTYPE html>
 <html>
-  <head><title>Island Dream — Could Not Load Page</title></head>
+      <head><title>Tropic — Could Not Load Page</title></head>
   <body style="font-family:sans-serif;padding:40px;background:#0d7377;color:white;">
-    <h1>🌴 Island Dream</h1>
+    <h1>Tropic</h1>
     <h2>Could not load this page</h2>
     <p>The page at <strong>${targetUrl}</strong> could not be fetched.</p>
     <p><a href="/" style="color:#7fffd4;">Return to Island Dream</a></p>
@@ -687,7 +687,7 @@ router.get("/proxy/meta", async (req, res) => {
   try {
     const upstream = await fetch(targetUrl, {
       headers: {
-        "User-Agent": "Mozilla/5.0 Island Dream Browser/1.0",
+        "User-Agent": "Mozilla/5.0 Tropic Browser/1.0",
         Accept: "text/html",
       },
       redirect: "follow",

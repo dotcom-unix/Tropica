@@ -38,6 +38,13 @@ export function SearchInput({ initialValue = '', className = '' }: { initialValu
     submit(query);
   };
 
+  const providerLinks = [
+    { name: 'Google', url: 'https://www.google.com/search?q=' },
+    { name: 'DuckDuckGo', url: 'https://duckduckgo.com/?q=' },
+    { name: 'Bing', url: 'https://www.bing.com/search?q=' },
+    { name: 'SearX', url: 'https://searx.be/search?q=' },
+  ];
+
   return (
     <div ref={wrapperRef} className={`relative w-full max-w-2xl ${className}`}>
       <form onSubmit={handleSubmit} className="relative flex items-center w-full" data-testid="form-search">
@@ -62,6 +69,26 @@ export function SearchInput({ initialValue = '', className = '' }: { initialValu
           Search
         </button>
       </form>
+
+      <div className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-xs" aria-label="Search with another provider">
+        <span className="text-white/55">Search with</span>
+        {providerLinks.map((provider) => {
+          const href = query.trim()
+            ? `/browse?url=${encodeURIComponent(`${provider.url}${encodeURIComponent(query.trim())}`)}`
+            : undefined;
+          return (
+            <a
+              key={provider.name}
+              href={href}
+              aria-disabled={!href}
+              onClick={(event) => { if (!href) event.preventDefault(); }}
+              className={`transition-colors ${href ? 'text-white/75 hover:text-white underline decoration-white/30 underline-offset-4' : 'text-white/35 cursor-not-allowed'}`}
+            >
+              {provider.name}
+            </a>
+          );
+        })}
+      </div>
 
       {/* Suggestions dropdown */}
       {showSuggestions && suggestions.length > 0 && (

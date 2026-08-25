@@ -25,7 +25,7 @@ router.get("/favicon", async (req, res) => {
   try {
     const upstream = await fetch(`https://${hostname}/favicon.ico`, {
       headers: {
-        "User-Agent": "Mozilla/5.0 Island Dream Browser/1.0",
+        "User-Agent": "Mozilla/5.0 Tropic Browser/1.0",
         Accept: "image/avif,image/webp,image/png,image/svg+xml,image/*,*/*;q=0.8",
       },
       redirect: "follow",

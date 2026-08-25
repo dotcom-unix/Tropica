@@ -19,7 +19,7 @@ export default function Search() {
       <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-border shadow-sm px-4 md:px-8 py-4 flex flex-col md:flex-row items-center gap-6">
         <a href="/" className="font-serif text-2xl font-bold text-primary shrink-0 flex items-center gap-2 hover:opacity-80 transition-opacity" data-testid="link-home">
           <Palmtree className="w-6 h-6 text-secondary" />
-          Island Dream
+          Tropic
         </a>
         <div className="w-full max-w-3xl flex-1">
           <SearchInput initialValue={q} />
