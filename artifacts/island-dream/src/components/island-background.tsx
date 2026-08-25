@@ -29,19 +29,19 @@ export function IslandBackground() {
             <stop offset="35%" stopColor="#ffe8a1" stopOpacity=".82" />
             <stop offset="100%" stopColor="#ffd77d" stopOpacity="0" />
           </radialGradient>
-          <linearGradient id="palm-trunk" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="#39251f" />
-            <stop offset="50%" stopColor="#70452c" />
-            <stop offset="100%" stopColor="#2d2524" />
-          </linearGradient>
           <filter id="soft-blur">
             <feGaussianBlur stdDeviation="22" />
           </filter>
           <filter id="cloud-blur">
             <feGaussianBlur stdDeviation="7" />
           </filter>
-          <filter id="palm-shadow">
-            <feDropShadow dx="5" dy="10" stdDeviation="8" floodColor="#073c4e" floodOpacity=".3" />
+          <filter id="water-softness">
+            <feTurbulence type="fractalNoise" baseFrequency=".008 .06" numOctaves="2" seed="8" result="noise" />
+            <feColorMatrix in="noise" type="saturate" values="0" result="monoNoise" />
+            <feComponentTransfer in="monoNoise" result="softNoise">
+              <feFuncA type="table" tableValues="0 .13" />
+            </feComponentTransfer>
+            <feBlend in="SourceGraphic" in2="softNoise" mode="soft-light" />
           </filter>
           <pattern id="wave-lines" width="260" height="72" patternUnits="userSpaceOnUse">
             <path d="M-40 35 C 10 14, 55 14, 105 34 S 200 56, 300 28" fill="none" stroke="#baf5e8" strokeOpacity=".18" strokeWidth="4" />
@@ -82,7 +82,7 @@ export function IslandBackground() {
         <path d="M1010 629 C1080 624 1140 625 1210 629 M1260 631 C1312 632 1352 636 1390 642 M1080 652 C1152 647 1195 649 1248 654 M1290 665 C1334 663 1366 666 1402 671 M1130 683 C1168 680 1200 682 1230 686" fill="none" stroke="#fff6c7" strokeOpacity=".62" strokeWidth="5" strokeLinecap="round" />
 
         {/* Animated ocean texture */}
-        <rect y="618" width="1600" height="382" fill="url(#wave-lines)" opacity=".66" className="island-wave-texture" />
+        <rect y="618" width="1600" height="382" fill="url(#wave-lines)" opacity=".66" className="island-wave-texture" filter="url(#water-softness)" />
         <g fill="none" strokeLinecap="round">
           <path d="M-20 716 C120 683 260 725 405 710 S 690 686 842 718 S 1132 741 1288 712 S 1480 696 1620 713" stroke="#a6efe0" strokeOpacity=".34" strokeWidth="7" className="island-wave island-wave-one" />
           <path d="M-40 786 C110 756 248 790 368 782 M470 779 C610 750 720 767 842 788 M1000 796 C1120 768 1210 776 1335 792 M1450 786 C1510 775 1572 778 1640 789" stroke="#c3f5e7" strokeOpacity=".25" strokeWidth="4" className="island-wave island-wave-two" />
@@ -90,34 +90,6 @@ export function IslandBackground() {
           <path d="M-25 944 C130 916 280 958 430 939 M610 934 C760 908 870 930 1008 947 M1190 950 C1325 923 1450 952 1625 925" stroke="#d3f6e7" strokeOpacity=".14" strokeWidth="4" className="island-wave island-wave-two" />
         </g>
 
-        {/* Foreground palm tree */}
-        <g transform="translate(80 225) scale(.62)" filter="url(#palm-shadow)" opacity=".86">
-          <path d="M190 1030 C210 890 224 740 267 595 C286 531 322 462 357 407" fill="none" stroke="url(#palm-trunk)" strokeWidth="39" strokeLinecap="round" />
-          <path d="M206 1030 C236 860 260 710 286 600 C305 520 339 451 365 405" fill="none" stroke="#b77742" strokeOpacity=".35" strokeWidth="7" strokeLinecap="round" />
-          <g fill="none" stroke="#263b2b" strokeWidth="14" strokeLinecap="round">
-            <path d="M360 405 C280 370 192 365 85 393" />
-            <path d="M362 405 C260 326 188 273 93 254" />
-            <path d="M365 403 C340 299 344 212 385 115" />
-            <path d="M370 405 C425 303 505 242 606 205" />
-            <path d="M371 408 C475 371 579 374 680 425" />
-          </g>
-          <g fill="none" stroke="#4c713e" strokeWidth="6" strokeLinecap="round" opacity=".92">
-            <path d="M355 404 C260 388 177 390 75 430" />
-            <path d="M358 399 C262 300 182 235 112 214" />
-            <path d="M365 400 C350 287 363 190 426 85" />
-            <path d="M372 402 C451 292 540 238 638 231" />
-            <path d="M378 410 C494 386 585 408 690 474" />
-          </g>
-          <g fill="none" stroke="#6e9149" strokeWidth="4" strokeLinecap="round" opacity=".82">
-            <path d="M302 389 l-42 -31 M275 385 l-49 -12 M245 383 l-48 7 M215 386 l-44 24 M185 394 l-38 35" />
-            <path d="M315 367 l-30 -52 M295 349 l-39 -46 M274 331 l-42 -37 M252 315 l-42 -28 M228 300 l-40 -18" />
-            <path d="M357 352 l-25 -54 M351 320 l-20 -55 M348 287 l-11 -56 M350 251 l4 -58 M358 216 l18 -55" />
-            <path d="M400 361 l31 -52 M426 337 l42 -46 M453 314 l49 -36 M482 292 l57 -28 M515 274 l60 -16" />
-            <path d="M418 416 l57 -19 M452 422 l61 -5 M490 431 l64 11 M530 442 l62 26 M567 454 l59 39" />
-          </g>
-          <ellipse cx="365" cy="405" rx="48" ry="33" fill="#513528" />
-          <path d="M325 410 C345 440 382 441 407 413" fill="none" stroke="#8a5833" strokeWidth="9" />
-        </g>
       </svg>
 
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_55%_35%,rgba(255,255,255,.18),transparent_35%)]" />

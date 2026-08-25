@@ -1,2 +1,2 @@
 - [Proxy resource resolution](proxy-resource-resolution.md) — resolve dynamic requests against the upstream page URL, not the proxy endpoint, and carry protection flags into nested resources.
-- [Island Dream visual direction](visual-direction.md) — keep the home screen grounded in a bright tropical shoreline with dimensional ocean, sky, sun, islands, and palm framing.
+- [Island Dream visual direction](visual-direction.md) — keep the home screen grounded in a bright tropical shoreline with dimensional ocean, sky, sun, and islands.

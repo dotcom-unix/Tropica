@@ -22,21 +22,21 @@ export default function Home() {
       <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
         <button
           onClick={() => setLocation('/history')}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/50 hover:bg-white/80 border border-primary/10 text-sm text-foreground/70 hover:text-primary backdrop-blur-md shadow-sm transition-all"
+           className="scene-chip flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm text-white/85 hover:text-white transition-all"
         >
           <History className="w-4 h-4" />
           <span className="hidden sm:inline font-medium">History</span>
         </button>
         <button
           onClick={() => setLocation('/bookmarks')}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/50 hover:bg-white/80 border border-primary/10 text-sm text-foreground/70 hover:text-primary backdrop-blur-md shadow-sm transition-all"
+           className="scene-chip flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm text-white/85 hover:text-white transition-all"
         >
           <Bookmark className="w-4 h-4" />
           <span className="hidden sm:inline font-medium">Bookmarks</span>
         </button>
         <button
           onClick={() => setLocation('/settings')}
-          className="p-2 rounded-full bg-white/50 hover:bg-white/80 border border-primary/10 text-foreground/70 hover:text-primary backdrop-blur-md shadow-sm transition-all"
+           className="scene-chip p-2 rounded-full text-white/85 hover:text-white transition-all"
           title="Settings"
           aria-label="Settings"
         >
@@ -45,10 +45,10 @@ export default function Home() {
       </div>
 
       <div className="relative z-10 w-full px-6 flex flex-col items-center max-w-4xl">
-        <h1 className="font-serif text-6xl md:text-8xl font-bold text-primary mb-4 text-center drop-shadow-sm tracking-tight">
+         <h1 className="cloud-title font-serif text-6xl md:text-8xl font-bold mb-4 text-center tracking-tight">
           Island Dream
         </h1>
-        <p className="text-xl md:text-2xl text-foreground/80 mb-12 text-center font-sans max-w-lg">
+         <p className="scene-subtitle text-xl md:text-2xl mb-12 text-center font-sans max-w-lg">
           Your slice of paradise on the web.
         </p>
 
@@ -69,7 +69,7 @@ export default function Home() {
                   key={i}
                   data-testid={`button-history-${i}`}
                   onClick={() => setLocation(`/search?q=${encodeURIComponent(q)}`)}
-                  className="px-5 py-2.5 rounded-full bg-white/60 hover:bg-primary hover:text-white border border-primary/10 shadow-sm backdrop-blur-md transition-all duration-300 font-medium text-sm text-foreground/80 hover:scale-105 active:scale-95"
+                   className="scene-chip px-5 py-2.5 rounded-full transition-all duration-300 font-medium text-sm text-white/85 hover:text-white hover:scale-105 active:scale-95"
                 >
                   {q}
                 </button>
@@ -98,7 +98,7 @@ export default function Home() {
                 <button
                   key={i}
                   onClick={() => setLocation(`/browse?url=${encodeURIComponent(entry.url)}`)}
-                  className="flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-white/60 hover:bg-white/90 border border-primary/10 shadow-sm backdrop-blur-md transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] text-left group"
+                   className="scene-chip flex items-center gap-2.5 px-4 py-3 rounded-2xl transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] text-left group"
                 >
                   {entry.favicon ? (
                     <img src={entry.favicon} alt="" className="w-5 h-5 object-contain shrink-0" />
@@ -137,7 +137,7 @@ export default function Home() {
                 <button
                   key={i}
                   onClick={() => setLocation(`/browse?url=${encodeURIComponent(b.url)}`)}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-white/60 hover:bg-primary hover:text-white border border-primary/10 shadow-sm backdrop-blur-md transition-all duration-300 hover:scale-105 active:scale-95"
+                   className="scene-chip flex items-center gap-2 px-4 py-2.5 rounded-full transition-all duration-300 text-white/85 hover:text-white hover:scale-105 active:scale-95"
                 >
                   {b.favicon ? (
                     <img src={b.favicon} alt="" className="w-4 h-4 object-contain" />

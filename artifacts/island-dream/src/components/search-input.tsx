@@ -41,7 +41,7 @@ export function SearchInput({ initialValue = '', className = '' }: { initialValu
   return (
     <div ref={wrapperRef} className={`relative w-full max-w-2xl ${className}`}>
       <form onSubmit={handleSubmit} className="relative flex items-center w-full" data-testid="form-search">
-        <div className="absolute left-4 text-primary pointer-events-none">
+        <div className="absolute left-4 text-white/75 pointer-events-none">
           <Search className="w-6 h-6" />
         </div>
         <input
@@ -52,12 +52,12 @@ export function SearchInput({ initialValue = '', className = '' }: { initialValu
           onFocus={() => setShowSuggestions(true)}
           placeholder="Search the web from paradise..."
           autoComplete="off"
-          className="w-full pl-14 pr-32 py-4 rounded-full border-2 border-primary/20 bg-white/80 backdrop-blur-md text-foreground placeholder:text-muted-foreground shadow-lg focus:outline-none focus:border-primary focus:ring-4 ring-primary/20 transition-all text-lg font-sans"
+          className="scene-search w-full pl-14 pr-32 py-4 rounded-full text-white placeholder:text-white/70 focus:outline-none transition-all text-lg font-sans"
         />
         <button
           data-testid="button-submit-search"
           type="submit"
-          className="absolute right-2 bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2.5 rounded-full font-medium transition-transform hover:scale-105 active:scale-95 shadow-md text-sm md:text-base"
+          className="scene-search-button absolute right-2 px-6 py-2.5 rounded-full font-medium transition-transform hover:scale-105 active:scale-95 text-sm md:text-base"
         >
           Search
         </button>
@@ -65,14 +65,14 @@ export function SearchInput({ initialValue = '', className = '' }: { initialValu
 
       {/* Suggestions dropdown */}
       {showSuggestions && suggestions.length > 0 && (
-        <div className="absolute top-full mt-2 left-0 right-0 bg-white/95 backdrop-blur-md border border-primary/10 rounded-2xl shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
-          <div className="flex items-center justify-between px-4 py-2 border-b border-border">
-            <span className="text-xs font-bold uppercase tracking-widest text-primary/60 flex items-center gap-1.5">
+        <div className="absolute top-full mt-2 left-0 right-0 bg-sky-950/75 backdrop-blur-xl border border-white/20 rounded-2xl shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+          <div className="flex items-center justify-between px-4 py-2 border-b border-white/15">
+            <span className="text-xs font-bold uppercase tracking-widest text-white/65 flex items-center gap-1.5">
               <Clock className="w-3.5 h-3.5" /> Recent
             </span>
             <button
               onClick={(e) => { e.preventDefault(); clearHistory(); setShowSuggestions(false); }}
-              className="text-xs text-muted-foreground hover:text-destructive transition-colors"
+              className="text-xs text-white/55 hover:text-white transition-colors"
             >
               Clear
             </button>
@@ -82,9 +82,9 @@ export function SearchInput({ initialValue = '', className = '' }: { initialValu
               <li key={i}>
                 <button
                   onMouseDown={(e) => { e.preventDefault(); setQuery(s); submit(s); }}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-primary/5 transition-colors text-sm text-foreground"
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-white/10 transition-colors text-sm text-white/85"
                 >
-                  <Clock className="w-4 h-4 text-muted-foreground shrink-0" />
+                  <Clock className="w-4 h-4 text-white/45 shrink-0" />
                   <span className="flex-1 truncate">{s}</span>
                 </button>
               </li>
