@@ -43,10 +43,10 @@ export default function Home() {
         </button>
       </div>
       <div className="relative z-10 w-full px-6 flex flex-col items-center max-w-4xl">
-         <h1 className="cloud-title font-serif text-6xl md:text-8xl font-bold mb-4 text-center tracking-tight opacity-[0.6]">
+         <h1 className="cloud-title font-serif text-6xl md:text-8xl font-bold mb-4 text-center tracking-tight opacity-[0.75]">
            Tropic
         </h1>
-         <p className="scene-subtitle text-xl md:text-2xl mb-12 text-center font-sans max-w-lg">
+         <p className="scene-subtitle text-xl md:text-2xl mb-12 text-center font-sans max-w-lg opacity-[0.85]">
            Your slice of the web.
         </p>
 

@@ -59,7 +59,7 @@ export function SearchInput({ initialValue = '', className = '' }: { initialValu
           onFocus={() => setShowSuggestions(true)}
           placeholder="Search the web from paradise..."
           autoComplete="off"
-          className="scene-search w-full pl-14 pr-32 py-4 rounded-full text-white placeholder:text-white/70 focus:outline-none transition-all text-lg font-sans"
+          className="scene-search w-full pl-14 pr-32 py-4 rounded-full text-white placeholder:text-white/70 focus:outline-none transition-all text-lg font-sans opacity-[1]"
         />
         <button
           data-testid="button-submit-search"
@@ -69,7 +69,6 @@ export function SearchInput({ initialValue = '', className = '' }: { initialValu
           Search
         </button>
       </form>
-
       <div className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-xs" aria-label="Search with another provider">
         <span className="text-white/55">Search with</span>
         {providerLinks.map((provider) => {
@@ -89,7 +88,6 @@ export function SearchInput({ initialValue = '', className = '' }: { initialValu
           );
         })}
       </div>
-
       {/* Suggestions dropdown */}
       {showSuggestions && suggestions.length > 0 && (
         <div className="absolute top-full mt-2 left-0 right-0 bg-sky-950/75 backdrop-blur-xl border border-white/20 rounded-2xl shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
